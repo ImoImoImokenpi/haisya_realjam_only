@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+<link href="/static/css/main.css" rel="stylesheet">
+<header class="custom-header">
+    <h2 class="mx-auto text-start">Realjamの配車</h2>
+</header>
+<section class="vh-100 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            <div class="card" style="border-radius: 1rem;">
+                <div class="card-body p-5 text-center">
+                    <div class="row justify-content-center">
+                        <div class="col text-center">
+                            <form action="{{ url_for('index.register_d') }}" method="POST">
+                                <button class="btn btn-primary btn-lg">配車を組む</button>
+                            </form>
+                        </div>
+                        <div class="col text-center">
+                            <a href="/history_list" class="btn btn-primary btn-lg">履歴を見る</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

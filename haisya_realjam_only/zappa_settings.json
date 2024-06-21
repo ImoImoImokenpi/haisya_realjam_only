@@ -1,0 +1,42 @@
+{
+    "dev": {
+        "app_function": "haisya_app.run.app",
+        "aws_region": "ap-northeast-1",
+        "exclude": [
+            "boto3",
+            "dateutil",
+            "botocore",
+            "s3transfer",
+            "concurrent"
+        ],
+        "profile_name": "default",
+        "project_name": "haisya-realjam",
+        "runtime": "python3.12",
+        "s3_bucket": "zappa-6mdcmyd3u",   
+        "rds_host": "haisya-database-1.cdy6u0usw4dp.ap-northeast-1.rds.amazonaws.com",
+        "rds_port": 3306,
+        "rds_db_name": "haisya_db",
+        "rds_username": "admin",
+        "rds_password": "yukito1218",
+        "environment_variables": {
+            "DATABASE_HOST": "haisya-database-1.cdy6u0usw4dp.ap-northeast-1.rds.amazonaws.com",
+            "DATABASE_PORT": "3306",
+            "DATABASE_NAME": "haisya_db",
+            "DATABASE_USER": "admin",
+            "DATABASE_PASSWORD": "yukito1218"
+        },
+        "vpc_config": {
+            "SubnetIds": [
+                "subnet-05ca33baf0808c4ce",  
+                "subnet-03f2a285fedb1063f"   
+            ],
+            "SecurityGroupIds": [
+                "sg-0fa542c01db38c8d9" 
+            ]
+        },
+        "events": [{
+            "function": "create_db.create_tables",
+            "expression": "rate(1 day)"
+        }]
+    }
+}

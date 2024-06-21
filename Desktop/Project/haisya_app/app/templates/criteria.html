@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+<link href="/static/css/main.css" rel="stylesheet">
+
+<header class="custom-header">
+    <h2 class="mx-auto text-start">Realjamの配車</h2>
+</header>
+<section class="vh-100 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <h2 class="text-center mb-2">チーム登録</h2>
+                <p class="text-center">現在のチーム数: <span id="criteria-count"  >{{ criteria_count }}</span></p>
+                    <form id="criteria-form" action="{{ url_for('index.criteria_post') }}" method="POST" onsubmit="return checkForm() && checkDuplicates()">
+                        <input type="hidden" id="criteria-count-input" name="criteria_count" value="{{ criteria_count }}">
+                        <div id="criteria-fields">
+                            <div class="criteria-field" id="criteria-field-0">
+                            <div class="card mb-1" style="border-radius: 1rem;">
+                            <div class="card-body">
+                                <div class="form-group mb-1">
+                                    <label class="form-label ms-1" for="name-0">チーム名</label>
+                                    <input type="text" class="form-control form-control-sm rounded-pill" id="name-0" name="criteria[0][name]" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>                                
+                            </div>
+                            <button type="button" class="btn btn-danger btn-sm btn-close" aria-label="Close" onclick="removeCriteriaField(this)"></button>
+                            </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="d-flex justify-content-center">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addCriteria()">+チームを追加</button>
+                        </div>
+                        <br>
+                        <input type="submit"  class="btn btn-primary btn-block" value="運転車登録へ">
+                    </form>
+            </div>        
+        </div>
+    </div> 
+</section>
+{% endblock %}

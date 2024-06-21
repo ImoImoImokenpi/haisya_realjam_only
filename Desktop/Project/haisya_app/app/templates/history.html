@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+<link href="/static/css/main.css" rel="stylesheet">
+
+<header class="custom-header">
+    <h2 class="mx-auto text-start">Realjamの配車</h2>
+</header>
+<section class="vh-100 gradient-custom">
+    <div class="container py-5 h-100">
+        <h2 class="text-center mb-2">過去の配車履歴</h2><br>
+            <div class="row d-flex justify-content-center h-100">
+                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                    <div class="card" style="border-radius: 1rem;">
+                        <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            {% for history_name, created_date in history_names %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <a href="/history_list/{{ history_name }}" class="text-start">{{ history_name }}</a>
+                                    <span style="color: #888; margin-right: 25px;">{{ created_date.strftime('%Y/%m/%d/%H:%M') }}</span>
+                                    <button class="btn btn-danger delete-btn btn-close" aria-level="Close" data-name="{{ history_name }}"></button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="col text-end">
+                        <a href="/"><button class="btn btn-secondary">TOPに戻る</button></a>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+</section>
+{% endblock %}
