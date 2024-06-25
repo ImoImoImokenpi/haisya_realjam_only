@@ -1,6 +1,6 @@
 from flask import Blueprint
-from flask import render_template, request, redirect, url_for, session
-from .models import Driver, Passenger, Log_History, History 
+from flask import render_template, request, redirect, url_for, session, jsonify
+from .models import Group, Team, Driver, CheckedDriver, Passenger, CheckedPassenger, Log_History, History 
 from . import db
 from datetime import datetime
 from flask_login import login_required
@@ -13,161 +13,229 @@ index = Blueprint("index", __name__)
 def toppage():
     return render_template("toppage.html")
 
-@index.route("/history")
+@index.route("/group_list", methods=["POST"])
 @login_required
-def history():
-    return render_template("history.html")
+def group_list():
+    groups = Group.query.all()
+    return render_template("group_list.html", groups=groups)
 
-@index.route("/criteria", methods=["GET", "POST"])
+@index.route("/post_group/<group_name>", methods=["GET"])
 @login_required
-def criteria():
+def post_group(group_name):
+    group_select = Group.query.filter_by(name=group_name).first()
+    group_name = group_select.name
+    session["group_name"] = group_name
+    return redirect(url_for("index.add_driver", group_name=group_name))
+
+@index.route("/delete_group/<group_name>", methods=["POST"])
+@login_required
+def delete_group(group_name):
+    # 指定された名前の履歴をデータベースから削除
+    delete_name = Group.query.filter_by(group_name=group_name).first()
+    if delete_name:
+        teams = Team.query.filter_by(group_id=delete_name.id).all()
+        for team in teams:
+            db.session.delete(team)
+        
+        db.session.delete(delete_name)
+        db.session.commit
+    # 削除後に履歴リストページにリダイレクト
+    return redirect(url_for("index.group_list"))
+
+@index.route("/add_group", methods=["GET", "POST"])
+@login_required
+def add_group():
     criteria_count = 1
-    return render_template("criteria.html", criteria_count=criteria_count)
+    return render_template("add_group.html", criteria_count=criteria_count)
 
-@index.route("/criteria_post", methods=["POST"])
+@index.route("/add_group_post", methods=["POST"])
 @login_required
-def criteria_post():
+def add_group_post():
+    driver_count = 1
     criteria_count = int(request.form.get("criteria_count"))
-    driver_count = 1
+    #グループ名の確認
+    group_name = request.form['group_name']
+    existing_group = Group.query.filter_by(name=group_name).first()
+
+    if not group_name:
+        error_message = "グループ名を入力してください"
+        return redirect(url_for("index.add_group", error_message=error_message))
+    elif existing_group:
+        error_message = f"既に{existing_group.name}は使われています。"
+        return redirect(url_for("index.add_group", error_message=error_message))
+    else:
+        new_group = Group(name=group_name)
+        db.session.add(new_group)
+        db.session.commit()
     
-    select_name = []
-    for i in range(criteria_count):
-        name = request.form.get(f'criteria[{i}][name]')
-        select_name.append(name)
-
-    session["select_name"] = select_name
-        
-    return render_template("register_d_new.html", driver_count=driver_count, select_name=select_name)
-
-@index.route("/register_d", methods=["GET", "POST"])
-@login_required
-def register_d():
-    driver_count = 1
-    return render_template("register_d.html", driver_count=driver_count)
-
-@index.route("/register_d_post", methods=["POST"])
-@login_required
-def register_d_post():
-    if Driver.query.first():
-        db.session.query(Driver).delete()
+        for i in range(criteria_count):
+            name = request.form.get(f'criteria[{i}][name]')
+            new_team = Team(team_name=name, group_id=new_group.id)
+            db.session.add(new_team)
         db.session.commit()
 
-    driver_count = int(request.form.get("driver_count"))
+    driver_old = {}
+    drivers = Driver.query.filter_by(group_name=group_name).all()
+    for driver in drivers:
+        if driver.old not in driver_old:
+            driver_old[driver.old] = []
+        driver_old[driver.old].append(driver)
+    
+    group_select = Group.query.filter_by(name=group_name).first()
+    if group_select:
+        teams = Team.query.filter_by(group_id=group_select.id).all()
+        select_name = [team.team_name for team in teams]
 
-    for i in range(driver_count):
-        name = request.form.get(f'driver[{i}][name]')
-        old = request.form.get(f'driver[{i}][old]')
-        jenre = request.form.get(f'driver[{i}][jenre]')
-        capacity = request.form.get(f'driver[{i}][capacity]')
+    session["group_name"] = group_name
         
-        if name is None:
-            continue
+    return render_template("select_d.html", driver_count=driver_count, group_name=group_name, select_name=select_name, drivers=driver_old)
 
-        new_driver = Driver(name=name, old=old, jenre=jenre, capacity=capacity)
+@index.route("/add_driver/<group_name>", methods=["GET", "POST"])
+@login_required
+def add_driver(group_name):
+    group_select = group_select = Group.query.filter_by(name=group_name).first()    
+    if group_select:
+        teams = Team.query.filter_by(group_id=group_select.id).all()
+        select_name = [team.team_name for team in teams]
+    
+    if request.method == "POST":
+        name = request.form['driver_name']
+        old = request.form['driver_old']
+        jenre = request.form['driver_jenre']
+        capacity = request.form['driver_capacity']
+        
+        new_driver = Driver(group_name=group_name, name=name, old=old, jenre=jenre, capacity=capacity)
         db.session.add(new_driver)
+        db.session.commit()
+    
+    driver_old = {}
+    drivers = Driver.query.filter_by(group_name=group_name).all()
+    for driver in drivers:
+        if driver.old not in driver_old:
+            driver_old[driver.old] = []
+        driver_old[driver.old].append(driver)
 
-    db.session.commit()
+    return render_template("select_d.html", select_name=select_name, drivers=driver_old, group_name=group_name)
 
-    return redirect(url_for("index.register_p"))
-
-@index.route("/register_d_post_new", methods=["POST"])
+@index.route("/delete_driver/<int:driver_id>", methods=["POST"])
 @login_required
-def register_d_post_new():
-    if Driver.query.first():
-        db.session.query(Driver).delete()
+def delete_driver(driver_id):
+    driver = Driver.query.get(driver_id)
+    if driver:
+        db.session.delete(driver)
         db.session.commit()
 
-    driver_count = int(request.form.get("driver_count"))
+    group_name = session.get("group_name")
 
-    for i in range(driver_count):
-        name = request.form.get(f'driver[{i}][name]')
-        old = request.form.get(f'driver[{i}][old]')
-        jenre = request.form.get(f'driver[{i}][jenre]')
-        capacity = request.form.get(f'driver[{i}][capacity]')
+    group_select = group_select = Group.query.filter_by(name=group_name).first()    
+    if group_select:
+        teams = Team.query.filter_by(group_id=group_select.id).all()
+        select_name = [team.team_name for team in teams]
+    
+    driver_old = {}
+    drivers = Driver.query.filter_by(group_name=group_name).all()
+    for driver in drivers:
+        if driver.old not in driver_old:
+            driver_old[driver.old] = []
+        driver_old[driver.old].append(driver)
+
+    return render_template("select_d.html", select_name=select_name, drivers=driver_old, group_name=group_name)
+
+
+@index.route("/checked_driver", methods=["POST"])
+@login_required
+def checked_driver():
+    group_name = session.get("group_name")
+    checked_drivers = request.form.getlist("drivers")
+    
+    for driver_name in checked_drivers:
+        driver = Driver.query.filter_by(name=group_name).filter_by(name=driver_name).first()
         
-        if name is None:
-            continue
-
-        new_driver = Driver(name=name, old=old, jenre=jenre, capacity=capacity)
-        db.session.add(new_driver)
-
-    db.session.commit()
-
-    return redirect(url_for("index.register_p_new"))
-
-@index.route("/register_p", methods=["GET", "POST"])
-@login_required
-def register_p():
-    passenger_count = 1
-    return render_template("register_p.html", passenger_count=passenger_count)
-
-@index.route("/register_p_new", methods=["GET", "POST"])
-@login_required
-def register_p_new():
-    passenger_count = 1
-
-    select_name = session.get("select_name")
-
-    return render_template("register_p_new.html", passenger_count=passenger_count, select_name=select_name)
-
-
-@index.route("/register_p_post",  methods=["POST"])
-@login_required
-def register_p_post():
-    if Passenger.query.first():
-        db.session.query(Passenger).delete()
+        checked_driver = CheckedDriver(group_name=driver.group_name, name=driver.name, old=driver.old, jenre=driver.jenre, capacity=driver.capacity)
+           
+        db.session.add(checked_driver)
         db.session.commit()
 
-    passenger_count  = int(request.form.get("passenger_count"))
+    return redirect(url_for("index.add_passenger", group_name=group_name))
 
-    for i in range(passenger_count):
-        name = request.form.get(f'passenger[{i}][name]')
-        old = request.form.get(f'passenger[{i}][old]')
-        jenre = request.form.get(f'passenger[{i}][jenre]')
+@index.route("/add_passenger/<group_name>", methods=["GET", "POST"])
+@login_required
+def add_passenger(group_name): 
+    group_select = Group.query.filter_by(name=group_name).first()
+    if group_select:
+        teams = Team.query.filter_by(group_id=group_select.id).all()
+        select_name = [team.team_name for team in teams]
+
+    if request.method == "POST":
+        name = request.form['passenger_name']
+        old = request.form['passenger_old']
+        jenre = request.form['passenger_jenre']
         
-        if name is None:
-            continue    
-
-        new_passenger = Passenger(name=name, old=old, jenre=jenre)
+        new_passenger = Passenger(group_name=group_name, name=name, old=old, jenre=jenre)
         db.session.add(new_passenger)
+        db.session.commit()
+    
+    passenger_old = {}
+    passengers = Passenger.query.filter_by(group_name=group_name).all()
+    for passenger in passengers:
+        if passenger.old not in passenger_old:
+            passenger_old[passenger.old] = []
+        passenger_old[passenger.old].append(passenger)
 
-    db.session.commit()
+    return render_template("select_p.html", select_name=select_name, passengers=passenger_old, group_name=group_name)
 
-    return redirect(url_for("index.match"))
-
-@index.route("/register_p_post_new",  methods=["POST"])
+@index.route("/delete_passenger/<int:passenger_id>", methods=["POST"])
 @login_required
-def register_p_post_new():
-    if Passenger.query.first():
-        db.session.query(Passenger).delete()
+def delete_passenger(passenger_id):
+    passenger = Passenger.query.get(passenger_id)
+    if passenger:
+        db.session.delete(passenger)
         db.session.commit()
 
-    passenger_count  = int(request.form.get("passenger_count"))
+    group_name = session.get("group_name")
 
-    for i in range(passenger_count):
-        name = request.form.get(f'passenger[{i}][name]')
-        old = request.form.get(f'passenger[{i}][old]')
-        jenre = request.form.get(f'passenger[{i}][jenre]')
+    group_select = group_select = Group.query.filter_by(group_name=group_name).first()    
+    if group_select:
+        teams = Team.query.filter_by(group_id=group_select.id).all()
+        select_name = [team.team_name for team in teams]
+    
+    passenger_old = {}
+    passengers = Passenger.query.filter_by(group_name=group_name).all()
+    for passenger in passengers:
+        if passenger.old not in passenger_old:
+            passenger_old[passenger.old] = []
+        passenger_old[passenger.old].append(passenger)
+
+    return render_template("select_d.html", select_name=select_name, passengers=passenger_old, group_name=group_name)
+
+
+@index.route("/checked_passenger", methods=["POST"])
+@login_required
+def checked_passenger():
+    group_name = session.get("group_name")
+    checked_passengers = request.form.getlist("passengers")
+    
+    for passenger_name in checked_passengers:
+        passenger = Passenger.query.filter_by(group_name=group_name).filter_by(name=passenger_name).first()
         
-        if name is None:
-            continue    
-
-        new_passenger = Passenger(name=name, old=old, jenre=jenre)
-        db.session.add(new_passenger)
-
-    db.session.commit()
+        checked_passenger = CheckedPassenger(group_name=passenger.group_name, name=passenger.name, old=passenger.old, jenre=passenger.jenre)
+           
+        db.session.add(checked_passenger)
+        db.session.commit()
 
     return redirect(url_for("index.match"))
     
 @index.route("/match")
 @login_required
 def match():
+    group_name = session.get("group_name")
+
     if Log_History.query.first():
         db.session.query(Log_History).delete()
         db.session.commit()
 
-    driver_list = Driver.query.all()
-    passenger_list = Passenger.query.all()
+    driver_list = CheckedDriver.query.all()
+    passenger_list = CheckedPassenger.query.all()
     
     # リストの順番をシャッフルし、偏りを減らす
     random.shuffle(driver_list)
@@ -241,7 +309,7 @@ def match():
             db.session.add(new_match)
     db.session.commit()
 
-    return render_template("result.html", matches=matches, remove_length=remove_length, unassigned_drivers=unassigned_drivers)
+    return render_template("result.html", matches=matches, remove_length=remove_length, unassigned_drivers=unassigned_drivers, group_name=group_name)
 
 @index.route("/save", methods=["GET"])
 @login_required
@@ -319,3 +387,6 @@ def history_details(history_name):
 
 
 #　チーム名を自分で決めれる。条件の指定を自分でする。名前で自動入力。
+
+
+

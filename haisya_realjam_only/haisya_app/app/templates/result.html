@@ -6,6 +6,7 @@
 <section class="vh-100 gradient-custom">
     <div class="container py-5 h-100">
         <h2 class="text-center mb-2">配車結果</h2><br>
+        <h3 class="text-center mb-2">{{ group_name }}</h3><br>
         <script src="{{ url_for('static', filename='javascript/main.js') }}">
             var existingName = "{{ existing_name }}";
         </script>
@@ -39,7 +40,7 @@
                 <br><br>
                 <div class="row">
                     <div class="col text-start">
-                        <a href="{{ url_for('index.register_d') }}"><button class="btn btn-secondary">もう一度組む</button></a>
+                        <a href="{{ url_for('index.add_driver') }}"><button class="btn btn-secondary">もう一度組む</button></a>
                     </div>
                     <div class="col text-end">
                         <a href="{{ url_for('index.toppage') }}"><button class="btn btn-secondary">TOPに戻る</button></a>

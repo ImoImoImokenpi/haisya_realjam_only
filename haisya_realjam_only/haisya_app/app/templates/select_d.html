@@ -1,0 +1,162 @@
+{% extends "layout.html" %}
+{% block content %}
+<header class="custom-header">
+    <h2 class="mx-auto text-start">realjamの配車</h2>
+</header>
+<section class="vh-100 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <h2 class="text-center mb-2">{{ group_name }}</h2>
+                <div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                        運転手の追加
+                    </button>
+                </div>
+                <form id="driver-form" action="{{ url_for('index.checked_driver') }}" method="POST">
+                    {% for old, drivers in drivers.items() %}
+                        <h3>{{ old }}代</h3>
+                        <ul class="list-group mb-3">
+                            {% for driver in drivers %}
+                                <li class="list-group-item">
+                                    <div>
+                                        <input type="checkbox" name="drivers" value="{{ driver.name }}">
+                                        {{ driver.name }}:{{ driver.capacity }}人
+                                    </div>
+                                    <form action="{{ url_for('index.delete_driver', driver_id=driver.id) }}" method="POST" style="display:inline;">
+                                        <button class="btn btn-danger delete-btn btn-close" aria-level="Close" data-name="{{ driver.id }}" onclick="removeDriver(this)"></button>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endfor %}
+                    <br>
+                    <input type="submit"  class="btn btn-primary btn-block" value="乗車登録へ">
+                </form>
+                <br>
+                <!-- 追加のモーダル -->
+                <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">運転手</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="inputForm" action="{{ url_for('index.add_driver', group_name=group_name ) }}" method="POST">
+                                    <div class="form-group mb-1">
+                                        <label class="form-label ms-1" for="name">名前</label>
+                                        <input type="text" class="form-control form-control-sm rounded-pill" id="driver_name" name="driver_name" required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="form-group mb-1">
+                                        <label for="old" class="form-label ms-1">代</label>
+                                        <select id="driver_old" class="form-control form-control-sm rounded-pill" name="driver_old">
+                                            <option value="25">25代</option>
+                                            <option value="26">26代</option>
+                                            <option value="27">27代</option>
+                                            <option value="28">28代</option>
+                                            <option value="29">29代</option>
+                                            <option value="30">30代</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group mb-1">
+                                        <label for="jenre" class="form-label ms-1">チーム</label>
+                                        <select id="driver_jenre" class="form-control form-control-sm rounded-pill" name="driver_jenre">
+                                        {% for team in select_name %}
+                                            <option value="{{ team }}">{{ team }}</option>
+                                        {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group mb-1">
+                                        <label for="capacity" class="form-label ms-1">定員</label>
+                                        <select id="driver_capacity" class="form-control form-control-sm rounded-pill" name="driver_capacity">
+                                            <option value="8">8</option>
+                                            <option value="7">7</option>
+                                            <option value="6">6</option>
+                                            <option value="5">5</option>
+                                            <option value="4">4</option>
+                                            <option value="3">3</option>
+                                            <option value="2">2</option>
+                                            <option value="1">1</option>
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary" id="addDriver" onclick="addDriver()">追加する</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>                            
+                    </div>
+                </div>
+                <!-- ここまで -->
+            </div>        
+        </div>
+    </div> 
+</section>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>    
+    var selectName = {{ select_name|tojson|safe }};
+</script>
+
+{% endblock %}
+
+<form id="driver-form" action="{{ url_for('index.register_d_post') }}" method="POST" onsubmit="return checkForm() && checkDuplicates()">
+    <input type="hidden" id="driver-count-input" name="driver_count" value="{{ driver_count }}">
+    <div id="driver-fields">
+        <div class="driver-field" id="driver-field-0">
+        <div class="card mb-1" style="border-radius: 1rem;">
+        <div class="card-body">
+            <div class="form-group mb-1">
+                <label class="form-label ms-1" for="name-0">名前</label>
+                <input type="text" class="form-control form-control-sm rounded-pill" id="name-0" name="driver[0][name]" required>
+                <div class="invalid-feedback"></div>
+            </div>
+            <div class="form-group mb-1">
+                <label for="old-0" class="form-label ms-1">学年</label>
+                <select id="old" class="form-control form-control-sm rounded-pill" name="driver[0][old]">
+                    <option value="M1">M1</option>
+                    <option value="M2">M2</option>
+                    <option value="B4">B4</option>
+                    <option value="B3">B3</option>
+                    <option value="B2">B2</option>
+                    <option value="B1">B1</option>
+                </select>
+            </div>
+            <div class="form-group mb-1">
+                <label for="jenre-0" class="form-label ms-1">ジャンル</label>
+                <select id="jenre-0" class="form-control form-control-sm rounded-pill" name="driver[0][jenre]">
+                    <option value="HIPHOP">HIPHOP</option>
+                    <option value="LOCK">LOCK</option>
+                    <option value="POP">POP</option>
+                    <option value="BREAK">BREAK</option>
+                    <option value="WAACK">WAACK</option>
+                    <option value="HOUSE">HOUSE</option>
+                    <option value="JAZZ">JAZZ</option>
+                </select>
+            </div>
+            <div class="form-group mb-1">
+                <label for="capacity-0" class="form-label ms-1">定員</label>
+                <select id="capacity-0" class="form-control form-control-sm rounded-pill" name="driver[0][capacity]">
+                    <option value="8">8</option>
+                    <option value="7">7</option>
+                    <option value="6">6</option>
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" class="btn btn-danger btn-sm btn-close" aria-label="Close" onclick="removeDriverField(this)"></button>
+        </div>
+        </div>
+    </div>
+    <br>
+    <div class="d-flex justify-content-center">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addDriver()">+運転手の追加</button>
+    </div>
+    <br>
+    <input type="submit"  class="btn btn-primary btn-block" value="乗車登録へ">
+</form>

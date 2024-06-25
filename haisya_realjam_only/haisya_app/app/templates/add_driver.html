@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+{% block content %}
+<header class="custom-header">
+    <h2 class="mx-auto text-start">配車.com</h2>
+</header>
+<section class="vh-100 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="col text-end">
+                    <a href="{{ url_for('index.criteria')}}"><button type="button" class="btn btn-secondary btn-sm">チーム名を指定する</button></a><br>
+                </div>
+                <br>
+                <h2 class="text-center mb-2">運転手の追加</h2><br>
+                <form id="driver-form" action="{{ url_for('index.select_d') }}" method="POST" onsubmit="return checkForm() && checkDuplicates()">
+                    <div id="driver-fields">
+                        <div class="driver-field" id="driver-field">
+                        <div class="card mb-1" style="border-radius: 1rem;">
+                        <div class="card-body">
+                            <div class="form-group mb-1">
+                                <label class="form-label ms-1" for="name">名前</label>
+                                <input type="text" class="form-control form-control-sm rounded-pill" id="name" name="driver_name" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="form-group mb-1">
+                                <label for="old" class="form-label ms-1">代</label>
+                                <select id="old" class="form-control form-control-sm rounded-pill" name="driver_old">
+                                    <option value="25">25代</option>
+                                    <option value="26">26代</option>
+                                    <option value="27">27代</option>
+                                    <option value="28">28代</option>
+                                    <option value="29">29代</option>
+                                    <option value="30">30代</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-1">
+                                <label for="jenre" class="form-label ms-1">ジャンル</label>
+                                <select id="jenre" class="form-control form-control-sm rounded-pill" name="driver_jenre">
+                                    <option value="HIPHOP">HIPHOP</option>
+                                    <option value="LOCK">LOCK</option>
+                                    <option value="POP">POP</option>
+                                    <option value="BREAK">BREAK</option>
+                                    <option value="WAACK">WAACK</option>
+                                    <option value="HOUSE">HOUSE</option>
+                                    <option value="JAZZ">JAZZ</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-1">
+                                <label for="capacity" class="form-label ms-1">定員</label>
+                                <select id="capacity" class="form-control form-control-sm rounded-pill" name="driver_capacity">
+                                    <option value="8">8</option>
+                                    <option value="7">7</option>
+                                    <option value="6">6</option>
+                                    <option value="5">5</option>
+                                    <option value="4">4</option>
+                                    <option value="3">3</option>
+                                    <option value="2">2</option>
+                                    <option value="1">1</option>
+                                </select>
+                            </div>
+                        </div>
+                    <button type="submit" class="btn btn-primary">選択画面へ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

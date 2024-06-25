@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+{% block content %}
+<header class="custom-header">
+    <h2 class="mx-auto text-start">realjamの配車</h2>
+</header>
+<section class="vh-100 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <h2 class="text-center mb-2">{{ group_name }}</h2>
+                <div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                        乗客の追加
+                    </button>
+                </div>
+                <form id="passenger-form" action="{{ url_for('index.checked_passenger') }}" method="POST">
+                    {% for old, passengers in passengers.items() %}
+                        <h3>{{ old }}代</h3>
+                        <ul class="list-group mb-3">
+                            {% for passenger in passengers %}
+                                <li class="list-group-item">
+                                    <div>
+                                        <input type="checkbox" name="passengers" value="{{ passenger.name }}">
+                                        {{ passenger.name }}
+                                    </div>
+                                    <form action="{{ url_for('index.delete_passenger', passenger_id=passenger.id) }}" method="POST" style="display:inline;">
+                                        <button class="btn btn-danger delete-btn btn-close" aria-level="Close" data-name="{{ passenger_id}}"></button>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endfor %}
+                    <br>
+                    <input type="submit"  class="btn btn-primary btn-block" value="結果へ">
+                </form>
+                <br>
+                <!-- 追加のモーダル -->
+                <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">乗客</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="inputForm" action="{{ url_for('index.add_passenger') }}" method="POST">
+                                    <div class="form-group mb-1">
+                                        <label class="form-label ms-1" for="name">名前</label>
+                                        <input type="text" class="form-control form-control-sm rounded-pill" id="passenger_name" name="passenger_name" required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="form-group mb-1">
+                                        <label for="old" class="form-label ms-1">代</label>
+                                        <select id="passenger_old" class="form-control form-control-sm rounded-pill" name="passenger_old">
+                                            <option value="25">25代</option>
+                                            <option value="26">26代</option>
+                                            <option value="27">27代</option>
+                                            <option value="28">28代</option>
+                                            <option value="29">29代</option>
+                                            <option value="30">30代</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group mb-1">
+                                        <label for="jenre" class="form-label ms-1">チーム</label>
+                                        <select id="passenger_jenre" class="form-control form-control-sm rounded-pill" name="passenger_jenre">
+                                        {% for team in select_name %}
+                                            <option value="{{ team }}">{{ team }}</option>
+                                        {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary" id="addDriver">追加する</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>                            
+                    </div>
+                </div>
+                <!-- ここまで -->
+            </div>        
+        </div>
+    </div> 
+</section>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>    
+    var selectName = {{ select_name|tojson|safe }};
+</script>
+
+{% endblock %}
+

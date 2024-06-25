@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-
 function addDriver() {
     let driverCount = parseInt(document.getElementById("driver-count").innerText);
 

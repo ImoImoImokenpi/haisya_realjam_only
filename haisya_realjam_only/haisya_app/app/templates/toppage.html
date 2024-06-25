@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <header class="custom-header">
-    <h2 class="mx-auto text-start">配車.com</h2>
+    <h2 class="mx-auto text-start">realjamの配車</h2>
 </header>
 <section class="vh-100 gradient-custom">
     <div class="container py-5 h-100">
@@ -11,7 +11,7 @@
                 <div class="card-body p-5 text-center">
                     <div class="row justify-content-center d-flex">
                         <div class="col text-center col-md-6">
-                            <form action="{{ url_for('index.register_d') }}" method="POST">
+                            <form action="{{ url_for('index.group_list') }}" method="POST">
                                 <button class="btn btn-primary">配車を組む</button>
                             </form>
                         </div>
