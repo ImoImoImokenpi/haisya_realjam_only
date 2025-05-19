@@ -22,50 +22,36 @@ class User(UserMixin, db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-class Group(db.Model):
-    __tablename__ = 'groups'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(1000))
-    teams = db.relationship("Team", backref="group", lazy=True)
-
-class Team(db.Model):
-    __tablename__ = 'teams'
-    id = db.Column(db.Integer, primary_key=True)
-    team_name = db.Column(db.String(1000), nullable=False)
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
-
 class Driver(db.Model):
     __tablename__ = 'drivers'
     id = db.Column(db.Integer, primary_key=True)
-    group_name = db.Column(db.String(1000))
     name = db.Column(db.String(1000))
-    old = db.Column(Enum("25", "26", "27", "28", "29", "30"))
+    old = db.Column(Enum("25", "26", "27", "28", "29", "30", "31", "32"))
     jenre = db.Column(db.String(1000))
     capacity = db.Column(db.Integer)
 
 class CheckedDriver(db.Model):
     __tablename__ = 'checked_drivers'
     id = db.Column(db.Integer, primary_key=True)
-    group_name = db.Column(db.String(1000))
     name = db.Column(db.String(1000))
-    old = db.Column(Enum("25", "26", "27", "28", "29", "30"))
-    jenre = db.Column(db.String(1000))
+    old = db.Column(Enum("25", "26", "27", "28", "29", "30", "31", "32"))
+    jenre = db.Column(Enum("HIPHOP", "BREAK", "LOCK", "POP", "JAZZ", "WAACK", "HOUSE"))
+    section = db.Column(Enum("1", "2", "3"))
     capacity = db.Column(db.Integer)
 
 class Passenger(db.Model):
     __tablename__ = 'passengers'
     id = db.Column(db.Integer, primary_key=True)
-    group_name = db.Column(db.String(1000))
     name = db.Column(db.String(1000))
-    old = db.Column(Enum("25", "26", "27", "28", "29", "30"))
-    jenre = db.Column(db.String(1000))
+    old = db.Column(Enum("25", "26", "27", "28", "29", "30", "31", "32"))
+    jenre = db.Column(Enum("HIPHOP", "BREAK", "LOCK", "POP", "JAZZ", "WAACK", "HOUSE"))
 
 class CheckedPassenger(db.Model):
     __tablename__ = 'checked_passengers'
     id = db.Column(db.Integer, primary_key=True)
-    group_name = db.Column(db.String(1000))
     name = db.Column(db.String(1000))
-    old = db.Column(Enum("25", "26", "27", "28", "29", "30"))
+    old = db.Column(Enum("25", "26", "27", "28", "29", "30", "31", "32"))
+    section = db.Column(Enum("1", "2", "3"))
     jenre = db.Column(db.String(1000))
 
 class Log_History(db.Model):

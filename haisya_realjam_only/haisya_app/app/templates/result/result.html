@@ -6,24 +6,34 @@
 <section class="vh-100 gradient-custom">
     <div class="container py-5 h-100">
         <h2 class="text-center mb-2">配車結果</h2><br>
-        <h3 class="text-center mb-2">{{ group_name }}</h3><br>
-        <script src="{{ url_for('static', filename='javascript/main.js') }}">
+        <script src="{{ url_for('static', filename='javascript/main.js') }}"></script>
+        <script>
             var existingName = "{{ existing_name }}";
         </script>
         <div class="row d-flex justify-content-center h-100">
             <div class="col-12 col-md-8 col-lg-6 col-xl-5">
                 {% for driver, passengers in matches.items() %}
                     {% if passengers %}
-                    <div class="card mb-3" style="border-radius: 1rem;">
-                        <div class="card-body">
-                            <h3 class="card-title">{{ driver.name }}車</h3>
-                            <ul class="list-group list-group-flash rounded">
-                                {% for passenger in passengers %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">{{ passenger.name }} / {{ passenger.jenre }} / {{ passenger.old }}</li>
-                                {% endfor %}
-                            </ul>
+                        {% if driver.reheasal == "1" %}
+                            {% set driver_reheasal = "リハ有り" %}
+                        {% else %}
+                            {% set driver_reheasal = "リハ無し" %}
+                        {% endif %}
+                        <div class="card mb-3" style="border-radius: 1rem;">
+                            <div class="card-body">
+                                <h3 class="card-title">{{ driver.name }}'('{{driver.jenre}}/{{ driver.section }}部/{{ driver_reheasal }}')'車</h3>
+                                <ul class="list-group list-group-flash rounded">
+                                    {% for passenger in passengers %}
+                                        {% if passenger.reheasal == "1" %}
+                                            {% set passenger_reheasal = "リハ有り" %}
+                                        {% else %}
+                                            {% set passenger_reheasal = "リハ無し" %}
+                                        {% endif %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">{{ passenger.name }} / {{ passenger.jenre }} / {{ passenger.section }}部 / {{passenger_reheasal}} </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                         </div>
-                    </div>
                     {% endif %}
                 {% endfor %}
                 <br>
@@ -34,8 +44,8 @@
                     <h4>あと{{ remove_length }}人分の車が必要です。<br>運転手を追加してやり直してください。</h4>
                 {% endif %}
                 <br>
-                <div class="col text-start">
-                    <a href="{{ url_for('index.save') }}"><button class="btn btn-primary">結果を保存する</button></a>
+                <div class="col text-center">
+                    <a href="{{ url_for('index.save') }}"><button class="btn btn-primary btn-lg">結果を保存する</button></a>
                 </div>
                 <br><br>
                 <div class="row">
