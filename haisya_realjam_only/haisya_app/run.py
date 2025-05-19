@@ -1,6 +1,6 @@
 import os
 from flask import Flask, send_from_directory
-from app.__init__ import create_app, db
+from haisya_app.app import create_app, db
 
 app = create_app()
 
