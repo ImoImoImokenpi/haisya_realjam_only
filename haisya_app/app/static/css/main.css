@@ -58,6 +58,23 @@ header {
     margin-top: 20px;
 }
 
+/* チェックボックスのチェックマークをオレンジに */
+.form-check-input:checked {
+  background-color: #FF8C00;
+  border-color: #FF8C00;
+}
+
+/* チェックが入った時にチェックマークもオレンジっぽく */
+.form-check-input:checked[type="checkbox"] {
+  background-color: #FF8C00;
+  border-color: #FF8C00;
+}
+
+.form-check-input:focus {
+  border-color: #FF8C00;
+  box-shadow: 0 0 0 0.25rem rgba(255, 165, 0, 0.25);
+}
+
 
 @media (max-width: 500px) {
     .custom-header {

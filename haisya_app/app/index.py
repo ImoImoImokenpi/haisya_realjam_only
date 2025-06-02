@@ -32,7 +32,7 @@ def add_driver():
 
         return redirect(url_for("index.add_driver"))
     
-    all_drivers = Driver.query.all()
+    all_drivers = Driver.query.order_by(Driver.old.desc()).all()
     driver_by_old = {}
     for driver in all_drivers:
         if driver.old not in driver_by_old:
@@ -65,14 +65,16 @@ def checked_driver():
     for  driver_id_str in checked_drivers_ids:
         driver_id = int(driver_id_str)
         section = request.form.get(f'section-{driver_id}')
+        rehersal = request.form.get(f'rehersal-{driver_id}')
     
         driver = Driver.query.get(driver_id)
-        if driver and section:
+        if driver and section and rehersal:
             checked_driver = CheckedDriver(
                 name=driver.name, 
                 old=driver.old,
                 jenre=driver.jenre,
-                section=section, 
+                section=section,
+                rehersal=rehersal,
                 capacity=driver.capacity
             )
             db.session.add(checked_driver)
@@ -99,7 +101,7 @@ def add_passenger():
         return redirect(url_for("index.add_passenger"))
     
     passenger_by_old = {}
-    all_passengers = Passenger.query.all()
+    all_passengers = Passenger.query.order_by(Passenger.old.desc()).all()
     for passenger in all_passengers:
         if passenger.old not in passenger_by_old:
             passenger_by_old[passenger.old] = []
@@ -132,27 +134,29 @@ def checked_passenger():
     for passenger_id_str in checked_passengers_ids:
         passenger_id = int(passenger_id_str)
         section = request.form.get(f'section-{passenger_id}')
+        rehersal = request.form.get(f'rehersal-{passenger_id}')
     
         passenger = Passenger.query.get(passenger_id)
-        if passenger and section:
+        if passenger and section and rehersal:
             checked_passenger = CheckedPassenger(
                 name=passenger.name, 
                 old=passenger.old,
                 jenre=passenger.jenre,
                 section=section, 
+                rehersal=rehersal
             )
             db.session.add(checked_passenger)
 
     db.session.commit()
     return redirect(url_for("index.match"))
     
-@index.route("/log")
-@login_required
-def log():
-    driver_list = CheckedDriver.query.all()
-    passenger_list = CheckedPassenger.query.all()
+# @index.route("/log")
+# @login_required
+# def log():
+#     driver_list = CheckedDriver.query.all()
+#     passenger_list = CheckedPassenger.query.all()
 
-    return render_template("log/log.html", drivers=driver_list, passengers=passenger_list)
+#     return render_template("log/log.html", drivers=driver_list, passengers=passenger_list)
 
 @index.route("/match")
 @login_required
@@ -168,102 +172,114 @@ def match():
     random.shuffle(driver_list)
     random.shuffle(passenger_list)
 
-    # 乗客のあまりを抜いておく
-    total_capacity = sum(driver.capacity for driver in driver_list)
-    total_passenger = len(passenger_list)
-    
-    remove_length = 0
+    # リハあり・なしでリスト分割
+    driver_list_y = [d for d in driver_list if d.rehersal == "1"]
+    driver_list_n = [d for d in driver_list if d.rehersal != "1"]
+    passenger_list_y = [p for p in passenger_list if p.rehersal == "1"]
+    passenger_list_n = [p for p in passenger_list if p.rehersal != "1"]
 
-    if total_capacity <= total_passenger:
-        difference = total_passenger - total_capacity
-        remove = random.sample(passenger_list, difference)
-        remove_length = difference
-    
-    elif total_capacity == total_passenger:
+    def assign(drivers, passengers):
+        # 配車結果
+        matches = {}
+        
+        # 余りを計算
+        total_capacity = sum(driver.capacity for driver in drivers)
+        total_passenger = len(passengers)
+        
         remove_length = 0
+        remove_list = []
+        if total_capacity < total_passenger:
+            remove_length = total_passenger - total_capacity
+            remove_list = random.sample(passengers, remove_length)
+            passengers = [p for p in passengers if p not in remove_list]
+        
+        
+        # 余っている乗客を保持しておく
+        remain_passengers = passengers.copy()
 
-    # マッチリスト
-    matches = {}
+        # セクションとジャンルで割り当て
+        for driver in drivers:
+            matches[driver] = []
+            section_matches = []
+            if driver.capacity > 0:
+                for passenger in remain_passengers:
+                    if passenger.section == driver.section and passenger.jenre == driver.jenre:
+                        if driver.capacity > 0:
+                            section_matches.append(passenger)
+                            driver.capacity -= 1
+                matches[driver].extend(section_matches)
+                remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
+        
+        # セクションで割り当て
+        for driver in drivers:
+            section_matches = []
+            if driver.capacity > 0:
+                for passenger in remain_passengers:
+                    if passenger.section == driver.section:
+                        if driver.capacity > 0:
+                            section_matches.append(passenger)
+                            driver.capacity -= 1
+                matches[driver].extend(section_matches)
+                remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
 
-    # 残りの乗客を保持しておくリスト(乗客リストのコピーから取り除いていく)
-    remain_passengers = passenger_list.copy()
+        # ジャンルに基づく割り当て
+        for driver in drivers:
+            jenre_matches = []
+            if driver.capacity > 0:
+                for passenger in remain_passengers:
+                    if passenger.jenre == driver.jenre:
+                        if driver.capacity > 0:
+                            jenre_matches.append(passenger)
+                            driver.capacity -= 1
+                matches[driver].extend(jenre_matches)
+                remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
 
-    #　ページを戻った場合のためにcapacityを保存する
-    driver_capacity_save = {driver: driver.capacity for driver in driver_list}
-    
-    # セクションとジャンルで割り当て
-    for driver in driver_list:
-        matches[driver] = []
-        section_matches = []
-        if driver.capacity > 0:
-            for passenger in remain_passengers:
-                if passenger.section == driver.section and passenger.jenre == driver.jenre:
+        # 学年に基づく割り当て
+        for driver in drivers:
+            old_matches = []
+            if driver.capacity > 0:
+                for passenger in remain_passengers:
+                    if passenger.old == driver.old:
+                        if driver.capacity > 0:
+                            old_matches.append(passenger)
+                            driver.capacity -= 1
+                matches[driver].extend(old_matches)
+                remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
+
+        # 残りの乗客をランダムに割り当て
+        for driver in drivers:
+            if driver.capacity > 0:
+                random_matches = random.sample(remain_passengers, min(driver.capacity, len(remain_passengers)))
+                for passenger in random_matches:
                     if driver.capacity > 0:
-                        section_matches.append(passenger)
+                        matches[driver].append(passenger)
                         driver.capacity -= 1
-            matches[driver].extend(section_matches)
-            remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
-    
-    # セクションで割り当て
-    for driver in driver_list:
-        section_matches = []
-        if driver.capacity > 0:
-            for passenger in remain_passengers:
-                if passenger.section == driver.section:
-                    if driver.capacity > 0:
-                        section_matches.append(passenger)
-                        driver.capacity -= 1
-            matches[driver].extend(section_matches)
-            remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
 
-    # ジャンルに基づく割り当て
-    for driver in driver_list:
-        jenre_matches = []
-        if driver.capacity > 0:
-            for passenger in remain_passengers:
-                if passenger.jenre == driver.jenre:
-                    if driver.capacity > 0:
-                        jenre_matches.append(passenger)
-                        driver.capacity -= 1
-            matches[driver].extend(jenre_matches)
-            remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
+        unassigned_drivers = [driver.name for driver in drivers if not matches.get(driver)]
+        remove_list_names = [passenger.name for passenger in remove_list]
 
-    # 学年に基づく割り当て
-    for driver in driver_list:
-        old_matches = []
-        if driver.capacity > 0:
-            for passenger in remain_passengers:
-                if passenger.old == driver.old:
-                    if driver.capacity > 0:
-                        old_matches.append(passenger)
-                        driver.capacity -= 1
-            matches[driver].extend(old_matches)
-            remain_passengers = [passenger for passenger in remain_passengers if passenger not in matches[driver]]
+        for driver, passengers in matches.items():
+            for passenger in passengers:
+                driver_info = f"{driver.name} / {driver.jenre} / {driver.old}"
+                passenger_info = f"{passenger.name} / {passenger.jenre} / {passenger.old}"
+                new_match = Log_History(driver_name=driver_info, passenger_name=passenger_info)
+                db.session.add(new_match)
+        db.session.commit()
 
-    # 残りの乗客をランダムに割り当て
-    for driver in driver_list:
-        if driver.capacity > 0:
-            random_matches = random.sample(remain_passengers, min(driver.capacity, len(remain_passengers)))
-            for passenger in random_matches:
-                if driver.capacity > 0:
-                    matches[driver].append(passenger)
-                    driver.capacity -= 1
+        return matches, unassigned_drivers, remove_list_names
 
-    unassigned_drivers = [driver.name for driver in driver_list if not matches[driver]]
+    matches_y, unassigned_y, remove_y = assign(driver_list_y, passenger_list_y)
+    matches_n, unassigned_n, remove_n = assign(driver_list_n, passenger_list_n)
 
-    for driver in driver_list:
-        driver.capacity = driver_capacity_save[driver]
-    
-
-    for driver, passengers in matches.items():
-        for passenger in passengers:
-            driver_info = f"{driver.name} / {driver.jenre} / {driver.old}"
-            passenger_info = f"{passenger.name} / {passenger.jenre} / {passenger.old}"
-            new_match = Log_History(driver_name=driver_info, passenger_name=passenger_info)
-            db.session.add(new_match)
-    db.session.commit()
-
-    return render_template("result/result.html", matches=matches, remove_length=remove_length, unassigned_drivers=unassigned_drivers)
+    return render_template(
+        "result/result.html", 
+        matches_y=matches_y, 
+        matches_n=matches_n, 
+        remove_y=remove_y, 
+        remove_n=remove_n, 
+        unassigned_y=unassigned_y, 
+        unassigned_n=unassigned_n
+    )
 
 @index.route("/save", methods=["GET"])
 @login_required

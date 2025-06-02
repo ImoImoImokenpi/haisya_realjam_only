@@ -37,6 +37,7 @@ class CheckedDriver(db.Model):
     old = db.Column(Enum("25", "26", "27", "28", "29", "30", "31", "32"))
     jenre = db.Column(Enum("HIPHOP", "BREAK", "LOCK", "POP", "JAZZ", "WAACK", "HOUSE"))
     section = db.Column(Enum("1", "2", "3"))
+    rehersal = db.Column(Enum("1","2"))
     capacity = db.Column(db.Integer)
 
 class Passenger(db.Model):
@@ -52,6 +53,7 @@ class CheckedPassenger(db.Model):
     name = db.Column(db.String(1000))
     old = db.Column(Enum("25", "26", "27", "28", "29", "30", "31", "32"))
     section = db.Column(Enum("1", "2", "3"))
+    rehersal = db.Column(Enum("1","2"))
     jenre = db.Column(db.String(1000))
 
 class Log_History(db.Model):
