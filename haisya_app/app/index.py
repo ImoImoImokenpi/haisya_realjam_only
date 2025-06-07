@@ -339,22 +339,30 @@ def delete_history(history_name):
     # 削除後に履歴リストページにリダイレクト
     return redirect(url_for("index.history_list"))
 
-@index.route("/history_list/<history_name>")
+@index.route("/history_list/<history_name>", methods=["GET"])
 @login_required
 def history_details(history_name):
-    history_details = History.query.filter_by(history_name=history_name).all()
+    try:
+        history_details = History.query.filter_by(history_name=history_name).all()
     
-    drivers = {}
-    for history_detail in history_details:
-        driver = history_detail.driver_name
-        passenger = history_detail.passenger_name
-        if driver not in drivers:
-            drivers[driver] = [passenger]
-        else:
-            drivers[driver].append(passenger)
+        drivers = {}
+        for history_detail in history_details:
+            driver = history_detail.driver_name
+            passenger = history_detail.passenger_name
+            if driver is None or passenger is None:
+                print(f"Warnig:{driver}, {passenger}")
+                continue
+            if driver not in drivers:
+                drivers[driver] = set()
+            drivers[driver].add(passenger)
 
-    return render_template("history/history_details.html", drivers=drivers, history_name=history_name)
+        drivers = {driver: list(passengers) for driver, passengers in drivers.items()}
 
+        return render_template("history/history_details.html", drivers=drivers, history_name=history_name)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"{e}", 500
 
 
 
